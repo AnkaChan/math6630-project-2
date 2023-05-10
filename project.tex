@@ -1,18 +1,20 @@
-\documentclass[11pt]{amsart}
+\documentclass[12pt, fullpage,letterpaper]{article}
 
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
 \usepackage{amsmath,amssymb,graphicx,bbm}
 \usepackage{amsthm,verbatim}
 \usepackage{mathrsfs,mathtools}
+\usepackage{float}
 
 \usepackage[footnotesize,bf]{caption}
-\usepackage[left=1.1in,right=1.1in,top=1in]{geometry}
+% \usepackage[left=1.1in,right=1.1in,top=1in]{geometry}
 
 \newcommand{\bs}[1]{\boldsymbol{#1}}
 \newcommand{\mathd}{\textrm{d}}
 \newcommand{\ddx}[1]{\frac{\mathd}{\mathd #1}}
 \newcommand{\N}{\mathbbm{N}}
 \newcommand{\R}{\mathbbm{R}}
-\newcommand{\pfpx}[2]{\frac{\partial #1}{\partial #2}}
 
 %% Patch for amsart date
 \usepackage{etoolbox}
@@ -28,171 +30,226 @@
 \makeatother
 %%
 
-\title{Project 2: Spectral and finite volume methods}
-\author{XXXXXXX}
+\title{Project 1: Finite difference methods}
+\author{Anka Chen}
 \date{\today}
 
 \begin{document}
 \maketitle
 
-\textbf{1.} (Fourier spectral methods)\\
-Consider the partial differential equation,
-\begin{align}\label{eq:advdiff}
-  u_t + \sin (\pi x) u_x &= \frac{1}{2} u_{x x}, & u(x,0) &= \sin (2 \pi x), %& u(0,t) = u(1, t) &= 0,
+\section{Problem 1: Fourier Spectral Methods}
+\subsection{Question 1}
+We select the trail space $V_N$ as: 
+\begin{equation}
+    V_N=span\{\Phi_l(x)=e^{i k 2 \pi x},  x \in[0,1] \mid |l| <= N\}
+\end{equation}
+Since it's a Fourier-Galerkin scheme the trial space is the same as the test space.
+For each basis $ \Phi_k(x)$ of $V_N$, we have:
+\begin{align}
+    & \Phi'_k(x) =  ik2\pi \Phi_k(x) \\
+    & \Phi''_k(x) =  -k^24\pi^2 \Phi_k(x) \\ 
+    & \Phi_l(x)\Phi_k(x) = \Phi_{k+l}(x)
 \end{align}
-for $u = u(x,t)$, $x \in [0,1]$, $t > 0$, and periodic boundary conditions.
-  \begin{itemize}
-     \item[(a)] Write the semi-discrete form for the Fourier-Galerkin scheme for this problem. You may use a complex-valued basis (e.g., $e^{i j x},\; i = \sqrt{-1}$) if you like, but the solution $u$ should be real-valued. Use an odd number $2 N + 1$ for the dimension of the spatial variable discretization space.
-    \item[(b)] If using Forward Euler for fully discretizing the semi-discrete form, what is the timestep restriction (say as a function of $N$) to ensure that the scheme is stable in the sense of $A$-stability? (You may investigate this analytically or empirically via the region of stability.) What aspect of the equation \eqref{eq:advdiff} is the dominant contributor to the timestep restriction?  How does this make the total computational time of the solver scale with $N$?
-    \item[(c)] Implement both implicit (e.g., Crank-Nicolson) and explicit time-stepping methods (say RK-2) for solving the above problem up to time $T = 1$. Visualize the simulated results and discuss the advantages and disadvantages of each approach.
-  \end{itemize}
+$sin(2\pi x)$ can represented by basis of $V_N$:
+\begin{equation}
+    sin(2\pi x) = \frac{1}{2i} (\Phi_1(x) + \Phi_{-1}(x))
+\end{equation}
+Assume the weak solution given by Fourier-Galerkin scheme is $u_N(x) = \sum_{|l| \leq N} \hat{u}_l \Phi_l(x)$
+Thus, 
+\begin{align}
+    sin(2\pi x) u_x(x) & = \frac{1}{2i} (\Phi_1(x) - \Phi_{-1}(x)) i2\pi \sum_{|l| \leq N} l \hat{u}_l  \Phi_l(x) \\
+    &= \pi \sum_{|l| \leq N} l \hat{u}_l  (\Phi_{l+1}(x) - \Phi_{l-1}(x))
+\end{align}
 
-  \textbf{2.} (Strang splitting)\\
-  Consider the Korteweg de Vries equation:
-  \begin{align}\label{eq:kdv}
-    u_t + u_{xxx} - 6 u u_x&= 0, & u(x,0) &= -2 \mathrm{sech}^2(x),
-  \end{align}
-  over the domain $x \in [-10, 10]$ up to terminal time $T=1$, with periodic boundary conditions.
-  \begin{itemize}
-     \item[(a)] Consider an appropriate Fourier collocation discretization along with an explicit time-stepping scheme for solving \eqref{eq:kdv}. What are the advantages and disadvantages of this type of approach? (You need not actually implement this method.)
-     \item[(b)] With the same context as part (a), consider instead an impicit time-stepping scheme for solving \eqref{eq:kdv}. What are the advantages and disadvantages of this type of approach? (Again, no implementation is necessary.)
-    \item[(c)] Consider a general semi-discrete ODE,
-      \begin{align}\label{eq:split-ode}
-        \bs{u}' &= \mathcal{N}(\bs{u}) + \mathcal{L}(\bs{u}),
-      \end{align}
-      where $\mathcal{L}$ and $\mathcal{N}$ are some operators. \textit{Strang splitting} is an alternating approach for numerically solving the above ODE that treats $\mathcal{L}$ and $\mathcal{N}$ with different time discretizations and evolves them independently. To communicate the main idea, consider the following two schemes for solving two simpler ODE's:
-      \begin{align*}
-        \bs{f}' &= \mathcal{N}(\bs{f}) \hskip 5pt \xrightarrow{\textrm{RK2/Midpoint method (explicit)}}  \hskip 5pt\bs{f}_{n+1} = \mathcal{S}_{1,k} (\bs{f}_n) \coloneqq \bs{f}_n + k \mathcal{N}\left(\bs{f}_n + \frac{k}{2} \mathcal{N}(\bs{f}_n)\right) \\
-        \bs{g}' &= \mathcal{L}(\bs{g}) \hskip 5pt \xrightarrow{\textrm{Crank-Nicolson (implicit)}} \hskip 5pt \bs{g}_{n+1} = \mathcal{S}_{2,k} (\bs{g}_n),
-      \end{align*}
-      where the operator $\mathcal{S}_{2,k}$ defines the solution to the implicit Crank-Nicolson iteration:
-      \begin{align*}
-        \bs{g}_{n+1} = \mathcal{S}_{2,k}(\bs{g}_n) \hskip 5pt \Longrightarrow\hskip 5pt \bs{g}_{n+1} = \bs{g}_n + \frac{k}{2} \mathcal{L}\left(\bs{g}_n\right) + \frac{k}{2} \mathcal{L}(\bs{g}_{n+1}).
-      \end{align*}
-      With these individual schemes, Strang splitting is the following time-stepping for \eqref{eq:split-ode}:
-      \begin{align*}
-        \bs{w}_1 &= \mathcal{S}_{2,k/2} (\bs{u}_n) \\
-        \bs{w}_2 &= \mathcal{S}_{1,k} (\bs{w}_1) \\
-        \bs{u}_{n+1} &= \mathcal{S}_{2,k/2} (\bs{w}_2)
-      \end{align*}
-      Given this idea, how would this help in alleviating some of the disadvantages in parts (a) and (b) with purely explicit or purely implicit methods for solving \eqref{eq:kdv}? Propose a scheme using Strang splitting (say using the $\mathcal{L}_k$ and $\mathcal{N}_k$ operators above) for solving \eqref{eq:kdv}.
-    \item[(d)] Implement your scheme from (c) and illustrate how the disadvantages from (a) and (b) are ameliorated with this approach.
-  \end{itemize}
+Now we can write the discrete scheme as:
+\begin{equation}
+    \frac{d}{dt} \hat{\mathbf{u}} = - A\hat{\mathbf{u}} + \frac{1}{2} \hat{D}_2 \hat{\mathbf{u}}
+\end{equation}
+where,
+\begin{equation}
+\mathbf{A}=
+\begin{bmatrix}
+0 & -\pi N &0 & 0 & 0 \\
+-\pi N & 0 & -\pi (N-1) &\hdots & 0 \\
+0 & -\pi (N-1) &0  &\hdots & 0 \\
+
+\vdots &  \vdots  & \ddots & \vdots \\
+0 & 0 & 0 & \pi N & 0
+\end{bmatrix} 
+\end{equation}
+and
+\begin{equation}
+    \hat{D}_2 = diag(-4\pi^2N^2, -4\pi^2(N-1)^2, \dots,  -4\pi^2 N^2)
+\end{equation}
+% \subsection{Local Truncation Error}
+% First let's write out the $\widetilde{D}_0 \left( \kappa(x_j) \widetilde{D}_0 u_j \right)$ operator explicitly:
+% \begin{equation}
+% \begin{split}
+%     \widetilde{D}_0 \left( \kappa(x) \widetilde{D}_0 u(x)) \right) &= \widetilde{D}_0 \left(\kappa(x) \frac{u(x+h/2) - u(x-h/2}{h} \right)\\
+%     &= \kappa(x+h/2)\frac{u(x+h) - u(x)}{h^2} - \kappa(x-h/2)\frac{u(x) - u(x-h)}{h^2} \\
+% \end{split}
+% \end{equation}
+% We do the Taylor expansion for $\kappa$ at the point $x$:
+% \begin{equation}
+% \kappa(x+h/2)=k(x) + \kappa'(x)\frac{h}{1} + \kappa''(x)\frac{h^2}{8}  + \kappa^{(3)}(x)\frac{h^3}{48} + o(h^3)
+% \end{equation}
+% similarly:
+% \begin{equation}
+% \kappa(x-h/2)=k(x) - \kappa'(x)\frac{h}{1} + \kappa''(x)\frac{h^2}{8}  - \kappa^{(3)}(x)\frac{h^3}{48} + o(h^3)
+% \end{equation}
+
+% We do Taylor expansion for $u$ at the point $x$ as well: 
+% \begin{equation}
+% u(x+h) - u(x)= u'(x)h + u''(x)\frac{h^2}{2} + u^{(3)}\frac{h^3}{6} + u^{(4)}(x)\frac{h^4}{24} + o(h^4)
+% \end{equation}
+% \begin{equation}
+% u(x) - u(x-h)= u'(x)h - u''(x)\frac{h^2}{2} + u^{(3)}\frac{h^3}{6} - u^{(4)}(x)\frac{h^4}{24} + o(h^4)
+% \end{equation}
+
+% Then we can have the expansion of $\widetilde{D}_0 \left( \kappa(x) \widetilde{D}_0 u(x))\right)$:
+% \begin{equation}
+% \begin{split}
+% \widetilde{D}_0 \left( \kappa(x) \widetilde{D}_0 u(x))\right) &= \kappa(x)\left[ u''(x)+u^{(4)}\frac{h^2}{12} +o(h^2) \right]\\
+% &+\frac{h}{2}\kappa'(x) \left[\frac{2u'(x)}{h} + \frac{u^{(3)}(x)h}{3} + o(h)\right]\\
+% &+\frac{h^2}{8}\kappa'(x) \left[u''(x) + o(1)\right]\\
+% &= \kappa(x)u''(x) + \kappa'(x)u'(x) + \left[ \frac{\kappa(x)u^{(4)}(x)}{12} + \frac{\kappa'(x)u^{(3)}(x)}{6} + \frac{\kappa''(x)u''(x)}{8}\right]h^2 +o(h^2)
+% \end{split}
+% \end{equation}
+% Since $\ddx{x} \left(\kappa(x) \ddx{x} u(x) \right) = \kappa(x)u''(x) + \kappa'(x)u'(x)$, the local truncation error is:
+% \begin{equation}
+% \begin{split}
+% \text{LTE} = \widetilde{D}_0 \left( \kappa(x) \widetilde{D}_0 u(x))\right) - \ddx{x} \left(\kappa(x) \ddx{x} u(x) \right) \\
+% =  \left[ \frac{\kappa(x)u^{(4)}(x)}{12} + \frac{\kappa'(x)u^{(3)}(x)}{6} + \frac{\kappa''(x)u''(x)}{8}\right]h^2 +o(h^2)
+% \end{split}
+% \end{equation}
+% Thus this is a second-order scheme.
+
+% \subsection{Local Truncation Error}
+% Denote $\kappa(x_j-h/2)$ as $k_{j-1/2}$ and  $\kappa(x_j+h/2)$ as $k_{j+1/2}$, we can convert the operator to a matrix:
+% \begin{equation}
+% \mathbf{A}=
+% \begin{bmatrix}
+% -k_{1+1/2}-k_{1-1/2} & k_{1+1/2} &0 & \hdots & 0 \\
+% k_{2-1/2} & - k_{2+1/2}-k_{2-1/2} & k_{2+1/2} &\hdots & 0 \\
+% \vdots &  \vdots  & \ddots & \vdots \\
+% 0 & 0 & 0 & k_{M-1/2} & -k_{M+1/2}-k_{M-1/2} 
+% \end{bmatrix}  \frac{1}{h^2}
+% \end{equation}
+
+% I pick $u(x)=sin(\pi x), x \in [0,2]$ as the input function, see Fig. \ref{fig:solution}a.
+% I compute $f$ analytically:
+% \begin{equation}
+%     f(x) = k'(x)u'(x) + k(x)u''(x)
+% \end{equation}
+% I also confirmed the approximation of $f$ given by $\vec{f}_approx = A \vec{u}$, to make sure it is correct, see  Fig. \ref{fig:solution}bc.
+
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=1\textwidth]{Problem1/solution.pdf}
+%     \caption{Results generated from my solution programming: (a) the input $u(x)$, (b) the analytical $f$ computed by differentiating $u(x)$, (c) the numerical approximation of $f$, and (d) the solution of the ODE given by solving the linear system. }
+%     \label{fig:solution}
+% \end{figure}
+% \subsection{Solving}
+% Please see Fig.\ref{fig:error} for how the error and LTEs related to the steps of discretization. Both of those curves have a slope of -2.
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=0.6\textwidth]{Problem1/Error.pdf}
+%     \caption{How the errors and the LTEs changes with the steps of discretization. }
+%     \label{fig:error}
+% \end{figure}
+
+% \paragraph{An interesting finding}: When I am implementing the algorithm, I mistakenly computed $h$ as $\frac{1}{M+2}$ instead of  $\frac{1}{M+1}$. This will only affect the elements in $\mathbf{A}$. It turns out, even in this case, the solution will still converge, but with first-order accuracy. Because $h$ is computed incorrectly, it adds a first-order error term to the solution, making it a first-order scheme. 
+
+% \section{Finite difference methods in 2/3D }
+% \subsection{Discretization}
+% We just need to discretize the operator in two directions as we do in Problem 1:
+% \begin{equation}
+% \begin{split}
+% u_{xx}(x_i, y_i) = \frac{1}{h^2} \left[ { k_{i-1/2}u(x_{i-1}, y_i)  - (k_{i+1/2}-k_{i-1/2})u(x_{i}, y_i) -  k_{i+1/2}u(x_{i+1}, y_i) } \right]\\
+% u_{yy}(x_i, y_i) = \frac{1}{h^2} \left[ {  k_{i-1/2}u(x_{i}, y_{i-1})  - (k_{i+1/2}-k_{i-1/2})u(x_{i}, y_i) -  k_{i+1/2}u(x_{i}, y_{i+1} } \right]
+% \end{split}
+% \end{equation}
+% Then we have:
+% \begin{equation}
+% \nabla \cdot \left(\kappa(\bs{x}) \nabla \bs{u}(\bs{x}) \right) = \left[ u_{xx}(x_i, y_i) + u_{yy}(x_i, y_i) \right]_{i, j}
+% \end{equation}
+% The stencil is:
+% \begin{equation}
+% \begin{bmatrix}
+%   &k_{i-1/2} &  \\
+% k_{2-1/2} & -2(k_{2+1/2}-k_{2-1/2}) & k_{2+1/2}  \\
+%   &   k_{2+1/2}  &  
+
+% \end{bmatrix}  \frac{1}{h^2}
+% \end{equation}
+% Note that I the direction of $x, y$ is defined using the matrix coordinate system, where the origin is at the top left corner. 
+% We discretize $u$ in both x and y direction with $M$ steps, and flatten it in column-major order, this gives us a vector $\mathbf{u} \in \mathbb{R}^{M^2}$. Similarly, we can convert the $\nabla \cdot \left(\kappa(\bs{x}) \nabla \bs{u}(\bs{x}) \right)$ to a linear operator on  $\mathbf{u}$, and the $(i + jM)$-th row of $\mathbf{A}$, which corresponds to  $u_{i,j}$ is:
+% \begin{equation}
+% \begin{matrix}
+%  \frac{1}{h^2}k_{2-1/2} & \dots & \frac{1}{h^2} k_{i-1-1/2} & \frac{-2}{h^2}(k_{2+1/2}-k_{2-1/2})& \frac{1}{h^2}k_{2+1/2}               & \dots &  \frac{1}{h^2}k_{2+1/2} \\
+%  [i + M(j-1)]\text{-th} &       &   [i-1 + jM]\text{-th}    &   [i + jM]\text{-th}   &   [i+1 + jM]\text{-th}  &       &    [i + (j+1)M]\text{-th}   
+% \end{matrix} 
+% \end{equation}
 
 
-\textbf{3.} (Legendre spectral methods)\\
-Consider the viscous Burgers' partial differential equation,
-  {\begin{align*}
-      u_t + \left(\frac{u^2}{2}\right)_x &= \nu u_{x x}, \hskip 5pt x \in (-1,1)\\
-      u(\pm 1, t) &= 0. \\
-      u(x,0) &= \sin (\pi x).
-  \end{align*}}
-  Implement both a Legendre-Galerkin and Legendre-collocation solver for this equation. You may use an explicit time-stepping method.
-  \begin{itemize}
-    \item For \textit{viscous} Burgers', $\nu > 0$, show and discuss results for $t > 0$ when $\nu$ is small, and when $\nu$ is large.
-    \item For \textit{inviscid} Burgers', $\nu = 0$, what differences do you observe between the collocation and Galerkin methods? Do the solutions appear to be accurate for large $t$?
-  \end{itemize}
+% Consider the ordinary differential equation:
+% \begin{align}\label{eq:ode}
+%   \ddx{x} \left(\kappa(x) \ddx{x} u(x) \right) &= f(x), & x &\in [0,1],
+% \end{align}
+% with homogeneous Dirichlet boundary conditions, $u(0) = u(1) = 0$ , and where scalar diffusion coefficient $\kappa$ is given by,
+%   \begin{align*}
+%     \kappa(x) &= 2 + \sum_{\ell=1}^{5} \frac{1}{\ell+1} \sin( \ell \pi x ).
+%   \end{align*}
+%   The goal of this exercise will be to numerically compute solutions to this problem. \\[8pt]
+%   \begin{itemize}
+%     \item[(a)] Define the operator,
+%       \begin{align*}
+%         \widetilde{D}_0 u(x_j) &= \frac{u(x_j + h/2) - u(x_j - h/2)}{h/2}, & h &= 1/(N+1), & x_j &\coloneqq j h,
+%       \end{align*}
+%       for a fixed number of points $N \in \N$. Then with $u_j$ the numerical solution approximating $u(x_j)$ for solving the $d=1$ version of \eqref{eq:ode}, consider the scheme,
+%       \begin{align}\label{eq:D0-def}
+%         \widetilde{D}_0 \left( \kappa(x_j) \widetilde{D}_0 u_j \right) &= f(x_j), & j \in [N].
+%       \end{align}
+%       Show that, for smooth $u$ and $\kappa$, this scheme has second-order local truncation error.
+%     \item[(b)] Construct an exact solution via the \textit{mathed of manufactured solutions}: posit an exact (smooth) solution $u(x)$ (that satisfies the boundary conditions!) and, compute $f$ in \eqref{eq:ode} so that your posited solutions satifies \eqref{eq:ode}. 
+%     \item[(c)] Implement the scheme above for solving \eqref{eq:ode}, setting $f$ to be the function identified in part (b), so that you know the exact solution. Show that indeed you achieve second-order convergence in $h$ (say in the $h^{d/2}$-scaled vector $\ell^2$ norm) . (To ``show'' this, plot on a log scale the error as a function of a discretization parameter, such as $h$ or $N$, and verify that the slope of the resulting line is what is expected.)
+%   \end{itemize}
 
-\textbf{4.} (Biharmonic equation)\\
-Consider the biharmonic differential equation
-  {\begin{align*}
-    u^{(4)} - u_{x x} + u &= f(x), & x &\in (-1,1) \\
-    u(-1) = u(1) &= 0, & u'(-1) = u'(1) &= 0.
-  \end{align*}}
-  Consider a Galerkin procedure to find a solution $u$ from the polynomial space
-  \begin{align*}
-    P_{N,0,0} = \left\{ p\; \big|\; \deg p \leq N, \;\; p(-1) = p(1) = p'(-1) = p'(1) = 0\right\},
-  \end{align*}
-  which is a subspace of $H_0^2([-1,1])$. Derive an appropriate bilinear form for the differential equation using this space. Numerically implement a Galerkin solver for this equation, using basis functions $v_n$ for $P_{N,0,0}$ defined as
-  {\begin{align*}
-      v_n(x) &= \sum_{j=n-1}^{n+3} c_{n,j} p_{j}(x), & n &\geq 1.
-  \end{align*}}
-  where $c_{n,j}$ are chosen so that $v_n \in P_{N,0,0}$. Demonstrate exponential accuracy of your solver as a function of $N$ (using, e.g., the method of manufactured solutions).\\[12pt]
+% \noindent\textbf{2.} (Finite difference methods in 2/3D)\\
+%   Consider the following partial differential equation that generalizes \eqref{eq:ode}:
+%   \begin{align}\label{eq:laplace}
+%     \nabla \cdot \left(\kappa(\bs{x}) \nabla \bs{u}(\bs{x}) \right) &= f(\bs{x}), & \bs{x} \in [0,1]^d,
+%   \end{align}
+%   again with homoegenous Dirichlet boundary conditions, $u\big|_{\partial [0,1]^d} = 0$. Set the diffusion coefficient to be,
+%   \begin{align*}
+%     \kappa(\bs{x}) &= 2 + \sum_{k,\ell = 1}^3 \frac{1}{(k+1)(\ell+1)} \sin(\ell \pi x_1) \sin (k \pi x_2), & \bs{x} &= (x_1, x_2)^T.
+%   \end{align*}
+%   This problem involves numerically solving the PDE above.
+%   \begin{itemize}
+%     \item[(a)] Consider $d = 2$. To discretize the $\nabla$ operator for $d=2$, $\bs{x} = (x_1, x_2)^T$, use,
+%     \begin{align*}
+%       \nabla \sim \left(\begin{array}{c} \widetilde{D}_{0,1} \\ \widetilde{D}_{0,2} \end{array}\right),
+%     \end{align*}
+%       where $\widetilde{D}_{0,1}$ and $\widetilde{D}_{0,1}$ are one-dimensional versions of \eqref{eq:D0-def} operating in the $x_1$ and $x_2$ directions, respectively. Use the method of manufactured solutions to define an appropriate $f$ so that you know the exact solution. Verify expected order of accuracy (say in $h$) as in the previous problem. What novel practical aspects arise in the two-dimensional case compared to the 1D case?
+%     \item[(b)] Can you extend your solver to three dimensions? Do you still observe high-order convergence?  Note that in either 2 or 3 dimensions, you may want to consider iterative methods for solving the linear system. (Does the matrix $\bs{A}$ in your linear system have special properties or structure?) Note also that for these problems, if $\bs{u}$ is a vector containing the degrees of freedom for the solution $u$, then you can evaluate $\bs{u} \mapsto \bs{A} \bs{u}$ \textit{without} forming the full $d$-dimensional $\bs{A}$ matrix, and instead using only ``one-dimensional'' versions of $\bs{A}$.
+%   \end{itemize}
 
+% \noindent\textbf{3.} (Finite difference methods for time-dependent problems)\\
+%   Consider the PDE,
+%   \begin{align*}
+%     u_t + a u_x &= 0, & u(x,0) &= \exp(\sin 2 \pi x), & x \in [0, 1),
+%   \end{align*}
+%   with periodic boundary conditions, where $k$ is the timestep. In this problem, we'll use the following \textit{Lax-Wendroff} scheme to numerically solve this PDE:
+%   \begin{align*}
+%     D^0 u_j^n = -a D_0 u^j_n + \frac{a^2 k}{2} D_+ D_- u_j^n.
+%   \end{align*}
+%   \begin{itemize}
+%     \item[(a)] Show that this scheme has local truncation error that is order $h^2$ in space and $k^2$ in time.
+%     \item[(b)] Compute the stability bound relating $k$ and $h$ via von Neumann stability analysis.
+%     \item[(c)] Implement the Lax-Wendroff scheme (say with $a = 1$ and integrating up to time $T=1$) and numerically verify that the scheme is second-order in space, and second-order in time.
+%   \end{itemize}
 
-\textbf{5.} (Multidimensional wave equation)\\
-Consider the partial differential equation
-  {\begin{align*}
-      u_t = \boldsymbol{c} \cdot \nabla u(x,y),
-    \end{align*}
-  }
-  with periodic boundary conditions on $(x,y) \in [0, 2\pi)^2$. Let the wavespeed be
-    {
-    \begin{align*}
-      \boldsymbol{c}(x,y) = \left( \sin (x + y) , \sin (x - y) \right).
-    \end{align*}
-  }
-  \begin{itemize}
-    \item Code a Fourier-Galerkin and a Fourier-collocation method for this PDE.
-    \item Discuss the computational complexity of each of your solvers.
-    \item Investigate the accuracy of your solver, both in terms of timestep size and number of polynomial terms $N$. (E.g., by using an extremely refined comptuational solution as the ``exact" solution.)
-  \end{itemize}
-  \vskip 10pt
-
-  \textbf{6.} (1D Euler equations)\\
-  This problem asks you to write a solver for the one-dimensional Euler equations of gas dynamics. These equations, in conservation form, are written as
-\begin{align*}
-  \pfpx{\bs{u}}{t} + \pfpx{\bs{f(u)}}{x} &= 0, & t > 0,
-\end{align*}
-where the conserved variable $\bs{u}(x,t) \in \R^3$ and flux $\bs{f}$ are functions of the physical gas density $\rho(x,t)$, velocity $u(x,t)$, pressure $p(x,t)$, and energy $E(x,t)$,
-\begin{align*}
-\bs{u} &= \left[ \begin{array}{c} \rho \\ \rho u \\ E \end{array}\right], & \bs{f} &= \left[\begin{array}{c} \rho u \\ \rho u^2 + p \\ (E + p) u \end{array}\right],
-\end{align*}
-where pressure and energy are related by
-\begin{align*}
-  p = \left(\gamma - 1\right) \left( E - \frac{1}{2} \rho u^2 \right),
-\end{align*}
-where $\gamma = 7/5$ is a physical constant.
-The flux Jacobian for this problem is given by
-\begin{align*}
-  \pfpx{\bs{f}}{\bs{u}} = \left[ \begin{array}{ccc}
-                                0 & 1 & 0 \\
-      -\frac{3 - \gamma}{2} u^2 & (3 - \gamma) u & \gamma - 1 \\
-  -\frac{\gamma E u}{\rho} + (\gamma - 1) u^3 & \frac{\gamma E}{\rho} - \frac{3(\gamma-1) u^2}{2} & \gamma u \end{array}\right]
-\end{align*}
-This Jacobian can be diagonalized as follows:
-\begin{align*}
-  \pfpx{\bs{f}}{\bs{u}} &= \bs{S}(\bs{u}) \bs{\Lambda}(\bs{u}) \bs{S}(\bs{u})^{-1}, \\
-  \bs{\Lambda} &= \left[\begin{array}{ccc}
-                   u+c & 0 & 0 \\
-                   0 & u & 0 \\
-                   0 & 0 & u-c \end{array}\right].
-\end{align*}
-We have introduced the local sound speed $c$, defined as 
-\begin{align*}
-  c &\coloneqq \sqrt{\frac{\gamma p}{\rho}}, 
-\end{align*}
-
-Implement a finite volume solver for this problem using a Harten-Lax-van Leer (HLL) flux. This flux, given left- and right-hand states $\bs{u}_l$ and $\bs{u}_r$, respectively, is evaluated as
-\begin{align*}
-  \bs{F}(\bs{u}_l,\bs{u}_r) = \left\{ \begin{array}{rl} \bs{f}(\bs{u}_l), & s_- \geq 0 \\
-                                                        \frac{s_+ \bs{f}(\bs{u}_l) - s_- \bs{f}(\bs{u}_r) + s_+ s_- (\bs{u}_r - \bs{u}_l)}{s_+ - s_-}, & s_- \leq 0 \leq s_+ \\
-\bs{f}(\bs{u}_r), & s_+ \leq 0.\end{array}\right.
-\end{align*}
-Here, $s_{\pm}$, are the extreme wavespeeds of flux jacobians:
-\begin{align*}
-  s_- &\coloneqq \min_{i} \min \left\{ \lambda_i\left(\pfpx{\bs{f}}{\bs{u}}\left(\bs{u}_l\right)\right), \lambda_i\left(\pfpx{\bs{f}}{\bs{u}}\left(\bs{u}_r\right) \right)\right\}, &
-  s_+ &\coloneqq \max_{i} \max \left\{ \lambda_i\left(\pfpx{\bs{f}}{\bs{u}}\left(\bs{u}_l\right)\right), \lambda_i\left(\pfpx{\bs{f}}{\bs{u}}\left(\bs{u}_r\right) \right)\right\},
-\end{align*}
-where $\lambda_i(\bs{A})$ denotes the $i$th eigenvalue of $\bs{A}$.
-
-Test your solver with two popular initial conditions:
-\begin{itemize}
-  \item[(a)] \textit{Sod's shock tube} --- For $x \in [0,1]$,
-    {\begin{align*}
-      \rho(x,0) &= \left\{ \begin{array}{rl} 1, & x < \frac{1}{2} \\ \frac{1}{8}, & x \geq \frac{1}{2} \end{array}\right. &
-        \rho u(x,0) &= 0, &
-      E(x,0) &= \frac{1}{\gamma-1}\left\{ \begin{array}{rl} 1, & x < \frac{1}{2} \\ \frac{1}{10}, & x \geq \frac{1}{2} \end{array}\right.
-    \end{align*}}
-    Use non-periodic boundary conditions that match the $x = 0$ and $x=1$ values of the initial data, and solve up to terminal time $T = 0.2$. Plot the density $\rho$, the velocity $u$, and the pressure $p$.
-  \item[(b)] \textit{Shock entropy wave} --- For $x \in [-5, 5]$,
-    {\begin{align*}
-        \rho &= \left\{ \begin{array}{rl} 3.857143, & x < -4, \\ 1 + 0.2 \sin(\pi x), & x \geq -4 \end{array}\right. \\
-        u &= \left\{ \begin{array}{rl} 2.629369, & x < -4, \\ 0, & x \geq -4 \end{array}\right. \\
-        p &= \left\{ \begin{array}{rl} 10.33333, & x < -4, \\ 1, & x \geq -4 \end{array}\right.
-    \end{align*}}
-    Again use non-periodic boundary conditions that match the $x = \pm 5$ values of the initial data. Simulate up to time $T = 1.8$ and again plot the density, velocity, and pressure.
-\end{itemize}
-
+\bibliographystyle{siam}
+\bibliography{references}
 
 \end{document}
