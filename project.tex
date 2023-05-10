@@ -81,6 +81,34 @@ and
 \begin{equation}
     \hat{D}_2 = diag(-4\pi^2N^2, -4\pi^2(N-1)^2, \dots,  -4\pi^2 N^2)
 \end{equation}
+
+\subsection{Question 2}
+The fully discrete scheme is:
+\begin{equation}
+     \hat{\mathbf{u}}^{n+1} = (I + k( - A + \frac{1}{2} \hat{D}_2 )) \hat{\mathbf{u}}^{n} 
+\end{equation}
+so for stability, say in the 2-norm, we require,
+\begin{equation}
+     \| (I + k( - A + \frac{1}{2} \hat{D}_2 ))^n\| \leq 1
+\end{equation}
+Using submutiplicativity of the norm, this is ensured with,
+\begin{equation}
+     \| I + k( - A + \frac{1}{2} \hat{D}_2 )\| \leq 1
+\end{equation}
+Denote $H= ( - A + \frac{1}{2} \hat{D}_2 )$, this requires:
+\begin{equation}
+     \| I + k\lambda_i(H)\| \leq 1
+\end{equation}
+which is equivalent to:
+\begin{equation}
+k |\lambda_{\text{min}(H)}| \leq 2
+\end{equation}
+
+The time step needs to satisfy:
+\begin{equation}
+k \leq \frac{2}{|\lambda_{\text{min}(H)}|}
+\end{equation}
+
 % \subsection{Local Truncation Error}
 % First let's write out the $\widetilde{D}_0 \left( \kappa(x_j) \widetilde{D}_0 u_j \right)$ operator explicitly:
 % \begin{equation}
