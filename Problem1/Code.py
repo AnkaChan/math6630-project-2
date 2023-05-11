@@ -1,4 +1,7 @@
 import numpy as np
+from scipy.integrate import solve_ivp
+from functools import partial
+from matplotlib import pyplot as plt
 def toActualIndex(l, N):
     return N + l
 
@@ -26,8 +29,21 @@ def getD2(N):
         D2.append(-4 * (np.pi**2) * i **2)
     D2 = np.diag(D2)
     return D2
+
+def deriv2(t, u, H):
+
+    du = H @ u
+
+    return du
+
 if __name__ == '__main__':
     N = 10
+    tStop = 1
+    nSteps = 10 * N**2
+    numXSample = 300
+    tspan = np.array([0, tStop])
+    ts = np.linspace(0, tStop, nSteps + 1)
+    dt = ts[1] - ts[0]
 
     u = np.zeros(N*2 + 1, dtype=np.complex128)
 
@@ -47,7 +63,25 @@ if __name__ == '__main__':
 
     H = -A + 0.5 * D2
 
-    u, s, vh =np.linalg.svd(H)
-    print(s)
+    # u, s, vh =np.linalg.svd(H)
+    # print(s)
+
+    ret = solve_ivp(partial(deriv2, H=H), tspan, u0,method='RK23', t_eval=ts,)
+
+    print(ret)
+
+    us= ret.y
+    xs = np.linspace(0,1, numXSample, endpoint=True)
+
+    allData = np.zeros((numXSample, nSteps))
+    for iY in range(nSteps):
+        y = us[:, iY]
+        for iX in range(xs.shape[0]):
+            allData[iX, iY] = np.real(toSpatialDomian(y, xs[iX], N))
+
+    plt.imshow(allData)
+    plt.xlabel("t")
+    plt.ylabel("x")
+    plt.show()
 
 
