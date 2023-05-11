@@ -135,6 +135,31 @@ where
 \end{equation}
 where $p_n$ are Legendre polynomials.
 
+As to our problem, we let:
+\begin{equation}
+    u(x) = \sum_{j=2}^N \lambda_j q_j
+\end{equation}
+Since $(\frac{u^2}{2})_x = uu_x$, we have:
+\begin{equation}
+    (\frac{u^2}{2})_x = (\sum_{j=2}^N \lambda_j q_j) (\sum_{k=2}^N \lambda_k q'_k)
+\end{equation}
+thus:
+\begin{equation}
+    <(\frac{u^2}{2})_x, q_l> = \sum_{j=2}^N\sum_{k=2}^N  <\lambda_j q_j\lambda_k q'_k, q_l>
+\end{equation}
+This already looks way too complicated.
+As to the term $vu_{xx}$, we have:
+\begin{equation}
+    <u_xx, q_l> = -<u_x, q'_l> = \sum_{j=2}^N \lambda_j <q'_j, q'_l>
+\end{equation}
+Here we've obtained the discrete scheme for Legendre-Galerkin method, which is:
+\begin{equation}
+    \frac{d}{dt} \mathbf{u} = -(A + vM) \mathbf{u}
+\end{equation}
+where:
+\begin{equation}
+    A(i, j)
+\end{equation}
 % \subsection{Local Truncation Error}
 % First let's write out the $\widetilde{D}_0 \left( \kappa(x_j) \widetilde{D}_0 u_j \right)$ operator explicitly:
 % \begin{equation}
