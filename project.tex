@@ -52,7 +52,7 @@ For each basis $ \Phi_k(x)$ of $V_N$, we have:
 \end{align}
 $sin(2\pi x)$ can represented by basis of $V_N$:
 \begin{equation}
-    sin(2\pi x) = \frac{1}{2i} (\Phi_1(x) + \Phi_{-1}(x))
+    sin(2\pi x) = \frac{1}{2i} (\Phi_1(x) - \Phi_{-1}(x))
 \end{equation}
 Assume the weak solution given by Fourier-Galerkin scheme is $u_N(x) = \sum_{|l| \leq N} \hat{u}_l \Phi_l(x)$
 Thus, 
@@ -69,9 +69,9 @@ where,
 \begin{equation}
 \mathbf{A}=
 \begin{bmatrix}
-0 & -\pi N &0 & 0 & 0 \\
--\pi N & 0 & -\pi (N-1) &\hdots & 0 \\
-0 & -\pi (N-1) &0  &\hdots & 0 \\
+0 & \pi N &0 & 0 & 0 \\
+\pi  (-N+1) & 0 & -\pi (-N+1) &\hdots & 0 \\
+0 & \pi (-N+2) &0  &\hdots & 0 \\
 
 \vdots &  \vdots  & \ddots & \vdots \\
 0 & 0 & 0 & \pi N & 0
@@ -101,13 +101,30 @@ Denote $H= ( - A + \frac{1}{2} \hat{D}_2 )$, this requires:
 \end{equation}
 which is equivalent to:
 \begin{equation}
-k |\lambda_{\text{min}(H)}| \leq 2
+k |\lambda_{\text{max}(H)}| \leq 2
 \end{equation}
 
 The time step needs to satisfy:
 \begin{equation}
-k \leq \frac{2}{|\lambda_{\text{min}(H)}|}
+k \leq \frac{2}{|\lambda_{\text{max}(H)}|}
 \end{equation}
+I don't have sufficient knowledge to analytically compute $H$'s singular value. But numerical analysis shows that $|\lambda_{\text{max}(H)}| \sim 20 N^2 $.
+Thus $k < \frac{1}{10N^2}$.
+To simulate the same period of time, the computational time grows cubically with N, where $N^2$ comes from the number of time steps and another $N$ comes from the computation of $H\hat{\mathbf{u}} $.
+
+
+\section{Problem 3: Legendre spectral methods}
+\subsection{Formulation of Legendre-Galerkin}
+The boundary function is homogeneous. We apply an essential treatment of boundary conditions. 
+We choose the trial/test space as:
+\begin{equation}
+    P_{N,0} = \text{span}\{ q_n \mid j =2, \dots , N\}
+\end{equation}
+where
+\begin{equation}
+    q_n(x) = p_n(x) - p_n(-1)\frac{1-x}{2} - p(1)\frac{1+x}{2}, n \geq 2
+\end{equation}
+where $p_n$ are Legendre polynomials.
 
 % \subsection{Local Truncation Error}
 % First let's write out the $\widetilde{D}_0 \left( \kappa(x_j) \widetilde{D}_0 u_j \right)$ operator explicitly:
