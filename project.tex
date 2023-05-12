@@ -30,6 +30,9 @@
 \makeatother
 %%
 
+\usepackage[dvipsnames]{xcolor}
+\newcommand{\an}[1]{{\leavevmode\color{BrickRed}{#1}}}
+
 \title{Project 1: Finite difference methods}
 \author{Anka Chen}
 \date{\today}
@@ -122,6 +125,8 @@ To simulate the same period of time, the computational time grows cubically with
 The explicit method is faster in computing each step but it requires a lot of time steps to be stable. 
 In contrast, the implicit integrator is slower to compute but it requires less time step to be stable.
 
+\an{The above is qualitatively correct, but you should've also seen that even though the implicit method requires more time per step, it still should be quite fast (the linear system is sparse). Anyway, I guess in your code you only have the explicit solver.}
+
 \section{Problem 3: Legendre spectral methods}
 \subsection{Formulation of Legendre-Galerkin}
 The boundary function is homogeneous. We apply an essential treatment of boundary conditions. 
@@ -160,6 +165,8 @@ where:
 \begin{equation}
     A(i, j)
 \end{equation}
+
+\an{The above is fine (as far as you got), you just need to work things out. You can compute much of this exactly (to numerical precision) using quadrature.}
 % \subsection{Local Truncation Error}
 % First let's write out the $\widetilde{D}_0 \left( \kappa(x_j) \widetilde{D}_0 u_j \right)$ operator explicitly:
 % \begin{equation}
